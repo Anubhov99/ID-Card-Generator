@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive ID Card Generator (High-Res)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root {
+    --primary: #005a9c;
+    --bg-color: #f0f2f5;
+  }
+  * { box-sizing: border-box; }
+  body { 
+    background-color: var(--bg-color); 
+    margin: 0;
+    padding: 2rem; 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    display: flex;
+    gap: 3rem;
+    justify-content: center;
+    align-items: flex-start;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Form Panel Styles */
+  .control-panel {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    width: 350px;
+    flex-shrink: 0;
+  }
+  .control-panel h2 {
+    margin-top: 0;
+    color: #333;
+    font-size: 1.4rem;
+    margin-bottom: 1.5rem;
+  }
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  .form-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 0.4rem;
+  }
+  .form-group input, .form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    transition: border-color 0.2s;
+  }
+  .form-group input:focus, .form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+  .form-group input[type="file"] {
+    padding: 7px;
+    background: #f9f9f9;
+  }
+  .actions {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  button {
+    padding: 12px;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: 100%;
+  }
+  button:hover {
+    background-color: #00437a;
+  }
+
+  /* Card Preview Styles */
+  .preview-panel {
+    display: flex; 
+    flex-direction: column;
+    gap: 2rem; 
+  }
+  .id-card { 
+    width: 260px; 
+    height: 410px; 
+    background: #ffffff; 
+    border-radius: 12px; 
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1); 
+    overflow: hidden; 
+    position: relative; 
+    border: 1px solid #e0e0e0; 
+  }
+  
+  /* Front Card */
+  .header { 
+    background: #ffffff; 
+    text-align: center; 
+    padding: 15px 0; 
+    border-bottom: 3px solid var(--primary); 
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .header img { 
+    max-height: 40px; 
+    max-width: 80%;
+    object-fit: contain;
+  }
+  .photo-area { 
+    text-align: center; 
+    margin-top: 25px; 
+  }
+  
+  /* HIGH-RES PHOTO WRAPPER */
+  .photo-wrapper { 
+    width: 110px; 
+    height: 130px; 
+    border: 3px solid var(--primary); 
+    border-radius: 10px; 
+    margin: 0 auto; 
+    background-color: #f4f4f4;
+    overflow: hidden; /* Crops the image without compressing it */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  #out-photo {
+    width: 100%;
+    height: 100%;
+  }
+  
+  .details { 
+    text-align: center; 
+    padding: 15px 10px; 
+  }
+  .name { 
+    font-size: 1.3rem; 
+    font-weight: 700; 
+    color: #222; 
+    margin: 5px 0; 
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .role { 
+    font-size: 0.95rem; 
+    color: var(--primary); 
+    font-weight: 600; 
+    margin-bottom: 10px; 
+  }
+  .emp-id { 
+    font-size: 0.85rem; 
+    color: #666; 
+    font-weight: 500;
+  }
+  .footer { 
+    background: var(--primary); 
+    color: #ffffff; 
+    text-align: center; 
+    padding: 12px 10px; 
+    position: absolute; 
+    bottom: 0; 
+    width: 100%; 
+    font-size: 0.75rem; 
+    font-weight: 700; 
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Back Card */
+  .back-card .top-bar { 
+    background: var(--primary); 
+    height: 25px; 
+    width: 100%; 
+  }
+  .back-card .info { 
+    padding: 25px 20px; 
+    font-size: 0.85rem; 
+    color: #333; 
+    line-height: 1.6; 
+  }
+  .back-card .info strong { 
+    color: var(--primary); 
+  }
+  .back-card .barcode-container { 
+    text-align: center; 
+    margin: 20px 0; 
+  }
+  .return-address { 
+    margin-top: 15px; 
+    font-size: 0.7rem; 
+    text-align: center; 
+    border-top: 1px solid #eee; 
+    padding: 15px 20px 0 20px;
+    line-height: 1.5;
+    color: #444;
+  }
+
+  @media (max-width: 768px) {
+    body { flex-direction: column; align-items: center; }
+    .control-panel { width: 100%; max-width: 400px; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- Input Form Panel -->
+  <div class="control-panel">
+    <h2>Card Details</h2>
+    
+    <div class="form-group">
+      <label>Company Name</label>
+      <input type="text" id="in-company" value="TATA Consultancy Services">
+    </div>
+    <div class="form-group">
+      <label>Company Logo</label>
+      <input type="file" id="in-logo" accept="image/*">
+    </div>
+    
+    <hr style="border: 0; border-top: 1px solid #eee; margin: 1.5rem 0;">
+    
+    <div class="form-group">
+      <label>Employee Name</label>
+      <input type="text" id="in-name" value="Anubhov Menon">
+    </div>
+    <div class="form-group">
+      <label>Designation</label>
+      <input type="text" id="in-role" value="IT Analyst">
+    </div>
+    <div class="form-group">
+      <label>Employee ID</label>
+      <input type="text" id="in-id" value="3157099">
+    </div>
+    <div class="form-group">
+      <label>Employee Photo</label>
+      <input type="file" id="in-photo" accept="image/*">
+    </div>
+    
+    <hr style="border: 0; border-top: 1px solid #eee; margin: 1.5rem 0;">
+    
+    <div class="form-group">
+      <label>Blood Group</label>
+      <input type="text" id="in-blood" value="B+">
+    </div>
+    <div class="form-group">
+      <label>Emergency Contact Name</label>
+      <input type="text" id="in-emg-name" value="Joyjit Menon">
+    </div>
+    <div class="form-group">
+      <label>Emergency Contact Number</label>
+      <input type="text" id="in-emg-phone" value="8961051816">
+    </div>
+    
+    <hr style="border: 0; border-top: 1px solid #eee; margin: 1.5rem 0;">
+
+    <div class="form-group">
+      <label>Return Address</label>
+      <textarea id="in-address" rows="3">Gitanjali Park, New Town&#10;Kolkata, West Bengal</textarea>
+    </div>
+
+    <div class="actions">
+      <button onclick="downloadCard('front-card', 'ID_Card_Front_HighRes.png')">Download Front Card</button>
+      <button onclick="downloadCard('back-card', 'ID_Card_Back_HighRes.png')">Download Back Card</button>
+    </div>
+  </div>
+
+  <!-- Live Preview Panel -->
+  <div class="preview-panel">
+    <!-- Front Card -->
+    <div class="id-card" id="front-card">
+      <div class="header">
+        <img id="out-logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMzAiPjx0ZXh0IHk9IjIwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMCIgZmlsbD0iIzAwNWE5YyIgZm9udC13ZWlnaHQ9ImJvbGQiPkNPTVBBTlk8L3RleHQ+PC9zdmc+" alt="Logo">
+      </div>
+      <div class="photo-area">
+        <div class="photo-wrapper">
+          <img id="out-photo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMTAiIGhlaWdodD0iMTMwIj48cmVjdCB3aWR0aD0iMTEwIiBoZWlnaHQ9IjEzMCIgZmlsbD0iI2Y0ZjRmNCIvPjx0ZXh0IHg9IjIzIiB5PSI2NSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiNhYWEiPlVwbG9hZDwvdGV4dD48dGV4dCB4PSIyMCIgeT0iODAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjEyIiBmaWxsPSIjYWFhIj5QaG90by4uLjwvdGV4dD48L3N2Zz4=" alt="Employee Photo">
+        </div>
+      </div>
+      <div class="details">
+        <div class="name" id="out-name">Anubhov Menon</div>
+        <div class="role" id="out-role">IT Analyst</div>
+        <div class="emp-id">EMP ID: <span id="out-id">3157099</span></div>
+      </div>
+      <div class="footer" id="out-company">
+        TATA CONSULTANCY SERVICES
+      </div>
+    </div>
+
+    <!-- Back Card -->
+    <div class="id-card back-card" id="back-card">
+      <div class="top-bar"></div>
+      <div class="info">
+        <div><strong>Blood Group:</strong> <span id="out-blood">B+</span></div>
+        <div style="margin-top: 15px;">
+          <strong>Emergency Contact:</strong><br>
+          <span id="out-emg-name">Joyjit Menon</span><br>
+          <span id="out-emg-phone">8961051816</span>
+        </div>
+      </div>
+      <div class="barcode-container">
+        <!-- SVG Barcode instead of CSS background (Renders perfectly in html2canvas) -->
+        <svg width="180" height="40" viewBox="0 0 180 40" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="4" height="40" fill="#000"/><rect x="8" y="0" width="2" height="40" fill="#000"/><rect x="14" y="0" width="6" height="40" fill="#000"/><rect x="24" y="0" width="2" height="40" fill="#000"/><rect x="30" y="0" width="8" height="40" fill="#000"/><rect x="42" y="0" width="4" height="40" fill="#000"/><rect x="50" y="0" width="2" height="40" fill="#000"/><rect x="56" y="0" width="6" height="40" fill="#000"/><rect x="66" y="0" width="2" height="40" fill="#000"/><rect x="72" y="0" width="4" height="40" fill="#000"/><rect x="80" y="0" width="8" height="40" fill="#000"/><rect x="92" y="0" width="2" height="40" fill="#000"/><rect x="98" y="0" width="6" height="40" fill="#000"/><rect x="108" y="0" width="4" height="40" fill="#000"/><rect x="116" y="0" width="2" height="40" fill="#000"/><rect x="122" y="0" width="8" height="40" fill="#000"/><rect x="134" y="0" width="4" height="40" fill="#000"/><rect x="142" y="0" width="6" height="40" fill="#000"/><rect x="152" y="0" width="2" height="40" fill="#000"/><rect x="158" y="0" width="8" height="40" fill="#000"/><rect x="170" y="0" width="4" height="40" fill="#000"/><rect x="178" y="0" width="2" height="40" fill="#000"/>
+        </svg>
+        <div style="font-size: 0.65rem; margin-top: 5px; color: #666; letter-spacing: 2px;" id="out-barcode-id">31570995539</div>
+      </div>
+      <div class="return-address">
+        <strong>If found, please return to:</strong><br>
+        <span id="out-ret-company">TATA Consultancy Services</span><br>
+        <span id="out-address" style="white-space: pre-line;">Gitanjali Park, New Town<br>Kolkata, West Bengal</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Bind inputs to output texts
+    function bindInput(inputId, outputId) {
+      document.getElementById(inputId).addEventListener('input', function(e) {
+        document.getElementById(outputId).innerText = e.target.value;
+      });
+    }
+
+    bindInput('in-name', 'out-name');
+    bindInput('in-role', 'out-role');
+    bindInput('in-blood', 'out-blood');
+    bindInput('in-emg-name', 'out-emg-name');
+    bindInput('in-emg-phone', 'out-emg-phone');
+    bindInput('in-address', 'out-address');
+
+    document.getElementById('in-id').addEventListener('input', function(e) {
+      document.getElementById('out-id').innerText = e.target.value;
+      document.getElementById('out-barcode-id').innerText = e.target.value + '5539';
+    });
+
+    document.getElementById('in-company').addEventListener('input', function(e) {
+      document.getElementById('out-company').innerText = e.target.value;
+      document.getElementById('out-ret-company').innerText = e.target.value;
+    });
+
+    // Handle Logo Upload
+    document.getElementById('in-logo').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          document.getElementById('out-logo').src = event.target.result;
+        }
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Handle Photo Upload & Mathematical Crop Calculation (Fixes stretching & html2canvas pixelation)
+    document.getElementById('in-photo').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          const img = new Image();
+          img.onload = function() {
+            const outPhoto = document.getElementById('out-photo');
+            outPhoto.src = img.src;
+            
+            // Calculate Aspect Ratio to perfectly crop inside the wrapper
+            const boxRatio = 110 / 130;
+            const imgRatio = img.width / img.height;
+            
+            if (imgRatio > boxRatio) {
+              outPhoto.style.height = '100%';
+              outPhoto.style.width = 'auto';
+            } else {
+              outPhoto.style.width = '100%';
+              outPhoto.style.height = 'auto';
+            }
+          }
+          img.src = event.target.result;
+        }
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Capture and Download Image at Maximum Resolution
+    function downloadCard(elementId, filename) {
+      const cardElement = document.getElementById(elementId);
+      
+      html2canvas(cardElement, {
+        scale: 5, // Render at 5x size to eliminate choppiness
+        useCORS: true,
+        backgroundColor: null 
+      }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    }
+  </script>
+
+</body>
+</html>
